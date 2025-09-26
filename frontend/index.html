@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sketch with Color Simulation</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="page-container">
+    <header>
+      <div class="nav-container">
+        <div class="logo">SketchColor</div>
+        <nav>
+          <ul>
+            <li><a href="#">HOME</a></li>
+            <li><a href="#">GALLERY</a></li>
+            <li><a href="#">HELP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="main-container">
+      <div class="left-content">
+        <h1>Sketch<br>with<br><span>Color Simulation</span></h1>
+        <p>Upload your image to simulate the stroke-by-stroke drawing process!</p>
+
+        <input type="file" id="imageInput" accept="image/*">
+        <button onclick="mockUpload()">Upload Image</button>
+        <div id="status"></div>
+      </div>
+      
+      <div class="right-image">
+        <img src="parrot_no_bg.png" alt="Parrot Image" id="preview" style="display: block;">
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function mockUpload() {
+      const file = document.getElementById("imageInput").files[0];
+      if (!file) {
+        alert("Please select an image first.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        localStorage.setItem("previewURL", e.target.result);
+        window.location.href = "result.html"; // ไปหน้าที่สอง
+      };
+      reader.readAsDataURL(file);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "name": "input45",
+  "order": [
+    9,
+    5,
+    8,
+    1,
+    4,
+    7,
+    3,
+    0,
+    6,
+    2
+  ],
+  "layers_dir": "C:\\Users\\User\\pro-2-backend\\segment\\output\\kmeans\\input45\\_layers",
+  "frames_dir": "C:\\Users\\User\\pro-2-backend\\segment\\output\\kmeans\\input45\\_frames_final",
+  "bg_color": [
+    255,
+    255,
+    255
+  ],
+  "timestamp": "20250827_182834"
+}

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Uploaded Result</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: #0c0c0c;
+      font-family: 'Poppins', sans-serif;
+      color: white;
+      margin: 0;
+      padding: 0;
+    }
+
+    .page-container {
+      padding: 40px;
+    }
+
+    .nav-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 1.8rem;
+      font-weight: bold;
+    }
+
+    nav ul {
+      display: flex;
+      gap: 40px;
+      list-style: none;
+    }
+
+    nav a {
+      text-decoration: none;
+      color: white;
+      font-weight: 600;
+    }
+
+    .result-container {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 40px;
+      flex-wrap: wrap;
+    }
+
+    .image-box {
+      text-align: center;
+    }
+
+    .image-box img,
+    .image-box video {
+      max-width: 300px;
+      border-radius: 20px;
+      margin-top: 15px;
+    }
+
+    .gif-controls {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .gif-controls button {
+      padding: 10px 24px;
+      font-size: 1rem;
+      border-radius: 25px;
+      border: none;
+      font-weight: bold;
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transition: 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #toggleBtn {
+      background: linear-gradient(to right, #5ee7df, #b490ca);
+    }
+
+    .btn-restart {
+      background: linear-gradient(to right, #ff9966, #ff5e62);
+    }
+
+    .btn-restart svg {
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    .gif-controls button:hover {
+      transform: scale(1.05);
+    }
+
+    .btn {
+      display: inline-block;
+      margin: 10px;
+      padding: 12px 25px;
+      border-radius: 25px;
+      text-decoration: none;
+      color: white;
+      font-weight: bold;
+    }
+
+    .btn.download {
+      background-color: #6a82fb;
+    }
+
+    .back-arrow {
+      text-decoration: none;
+      color: white;
+      font-size: 1.5rem;
+      margin-right: 10px;
+    }
+
+    .heading-with-arrow {
+      margin-top: 30px;
+      display: flex;
+      align-items: center;
+      font-size: 2rem;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-container">
+    <header>
+      <div class="nav-container">
+        <div class="logo">SketchColor</div>
+        <nav>
+          <ul>
+            <li><a href="index.html">HOME</a></li>
+            <li><a href="#">GALLERY</a></li>
+            <li><a href="#">HELP</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <h1 class="heading-with-arrow">
+      <a href="index.html" class="back-arrow">⬅</a>
+      <span>Uploaded Result</span>
+    </h1>
+
+    <div class="result-container">
+      <div class="image-box">
+        <h3>📤 Original Upload</h3>
+        <img id="originalImage" src="" alt="Original">
+      </div>
+      <div class="image-box">
+        <h3>🎨 Processed Result</h3>
+        <video id="resultVideo" width="300" autoplay loop muted playsinline>
+          <source src="stroke_render_input18.mp4" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+        <div class="gif-controls">
+          <button id="toggleBtn" onclick="togglePlayPause()">⏸ Pause</button>
+          <button class="btn-restart" onclick="restartVideo()">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="white">
+              <path d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5a5.002 5.002 0 01-9.9 1H5.08a7.003 7.003 0 006.92 6c3.87 0 7-3.13 7-7s-3.13-7-7-7z"/>
+            </svg>
+            Restart
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 40px;">
+      <a id="downloadLink" class="btn download" download> Download Result</a>
+    </div>
+  </div>
+
+  <script>
+    const video = document.getElementById('resultVideo');
+    const toggleBtn = document.getElementById('toggleBtn');
+
+    document.getElementById('originalImage').src = localStorage.getItem('previewURL');
+    document.getElementById('downloadLink').href = 'stroke_render_input18.mp4';
+
+    function togglePlayPause() {
+      if (video.paused) {
+        video.play();
+        toggleBtn.innerHTML = '⏸ Pause';
+      } else {
+        video.pause();
+        toggleBtn.innerHTML = '▶ Play';
+      }
+    }
+
+    function restartVideo() {
+      video.currentTime = 0;
+      video.play();
+      toggleBtn.innerHTML = '⏸ Pause';
+    }
+  </script>
+</body>
+</html>

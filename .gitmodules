@@ -1,0 +1,3 @@
+[submodule "external/clipseg"]
+	path = external/clipseg
+	url = https://github.com/timojl/clipseg.git
