@@ -1,222 +1,180 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
 
-* {
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --media-w: 520px;   /* กรอบรูป/วิดีโอในหน้า result */
+  --media-h: 320px;
+  --radius-xl: 26px;
+}
+
+body{
+  font-family:'Poppins',sans-serif;
+  background:#0c0c0c;
+  min-height:100vh;
+  position:relative;
+  overflow-x:hidden;
+  overflow-y:auto;
+}
+body::before, body::after{
+  content:'';position:absolute;border-radius:50%;opacity:.3;z-index:0
+}
+body::before{width:700px;height:700px;top:-200px;left:-200px;background:radial-gradient(circle,#ff7eae,transparent 70%)}
+body::after {width:800px;height:800px;bottom:-300px;right:-300px;background:radial-gradient(circle,#7d82ff,transparent 70%)}
+
+.page-container{
+  max-width:1400px;margin:40px auto;background:#111;border-radius:var(--radius-xl);
+  padding:30px 50px;box-shadow:0 18px 50px rgba(255,255,255,.1);position:relative;z-index:1;
+}
+header .nav-container{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+.logo{font-size:1.8rem;font-weight:700;color:#fff}
+nav ul{list-style:none;display:flex;gap:40px}
+nav a{color:#fff;font-weight:600;text-decoration:none;position:relative}
+nav a::after{content:'';display:block;height:3px;width:0;background:#ff5e78;transition:width .3s;position:absolute;bottom:-6px;left:0}
+nav a:hover::after{width:100%}
+
+/* ===================== หน้าแรก (index.html) ===================== */
+.main-container{display:flex;gap:40px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.left-content{max-width:560px}
+.left-content h1{color:#fff;line-height:1.05;font-size:3.2rem;margin-bottom:14px}
+.left-content h1 span{color:#ff5e78}
+.left-content p{color:#cfcfcf;margin-bottom:16px}
+
+/* input[file] */
+#imageInput{
+  width:520px;max-width:100%;
+  border:2px dashed rgba(255,94,120,.55);
+  background:rgba(255,255,255,.03);
+  color:#cfcfcf;
+  padding:12px 14px;
+  border-radius:999px;
+  outline:none;
+}
+#imageInput::file-selector-button{
+  border:0;
+  padding:10px 16px;
+  border-radius:999px;
+  background:linear-gradient(90deg,#6a82fb,#fc5c7d);
+  color:#fff;font-weight:700;cursor:pointer;margin-right:12px;
+}
+#imageInput:hover{background:rgba(255,255,255,.06)}
+
+.upload-btn{
+  display:inline-block;margin-top:14px;
+  width:520px;max-width:100%;
+  padding:14px 22px;border:0;border-radius:999px;
+  font-weight:700;color:#fff;cursor:pointer;
+  background:linear-gradient(90deg,#6a82fb,#9055ff);
+  box-shadow:0 8px 20px rgba(0,0,0,.25);transition:transform .15s ease;
+}
+.upload-btn:hover{transform:translateY(-1px)}
+
+.right-image img{
+  width:520px;max-width:100%;height:auto;display:block;
+  filter: drop-shadow(0 18px 40px rgba(0,0,0,.45));
+}
+
+/* ===================== หน้า result (result.html) ===================== */
+.title{color:#fff;margin:8px 0 22px;font-size:2rem}
+.back-arrow{color:#fff;text-decoration:none;margin-right:10px}
+
+.result-row{
+  display:flex; gap:34px; align-items:flex-start; justify-content:center;
+  flex-wrap:nowrap;
+}
+.col{display:flex;flex-direction:column;align-items:center}
+.col-title{color:#fff;margin-bottom:12px}
+
+/* กรอบคุมสื่อ */
+.media-frame{
+  width:var(--media-w);
+  height:var(--media-h);
+  border-radius:22px;
+  overflow:hidden;
+  background:#fff;
+  box-shadow:0 0 12px rgba(255,255,255,0.08);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+}
+.media-frame.dark{background:#000}
+.media-frame img,.media-frame video{width:100%!important;height:100%!important;object-fit:contain;display:block;background:#000}
+
+/* spinner เดิม (หน้า index ยังอาจใช้) */
+.media-frame.loading::after{
+  content:""; position:absolute; width:54px; height:54px; border-radius:50%;
+  border:4px solid rgba(255,255,255,.28); border-top-color:#6a82fb;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* แคปชันใต้ภาพ Original */
+.img-meta{
+  margin-top:10px;
+  color:#cfcfcf;
+  font-size:14px;
+  opacity:.95;
+  text-align:center;
+  white-space:nowrap;
+}
+
+/* ปุ่ม/ดาวน์โหลด */
+.controls{display:flex;gap:12px;justify-content:center;margin-top:14px}
+.btn{cursor:pointer;text-decoration:none;font-weight:700;color:#fff;border:none;border-radius:999px;padding:10px 20px;box-shadow:0 6px 16px rgba(0,0,0,.18);transition:.2s}
+.btn:hover{transform:translateY(-1px)}
+.pill.gradient-a{background:linear-gradient(90deg,#5ee7df,#b490ca)}
+.pill.gradient-b{background:linear-gradient(90deg,#ff9966,#ff5e62)}
+.xl{padding:14px 26px;border-radius:999px}
+.gradient-c{background:#6a82fb}
+.success{background:#00b894}
+.btn[aria-disabled="true"]{opacity:.45;pointer-events:none;filter:saturate(.3)}
+.download-center{display:flex;gap:16px;justify-content:center;margin-top:26px}
+
+/* ===================== Palette fixes ===================== */
+/* ซ่อน children เดิมๆ ใต้ <li> ที่ไม่ใช่วงกลม .swatch (กัน overlay เก่าโผล่) */
+.palette li > :not(.swatch){ display:none !important; }
+
+/* ย้ำสไตล์วงกลมสี + ใช้ title เป็น tooltip (ค่าพื้นฐาน) */
+.palette .swatch{
+  width:26px;
+  height:26px;
+  border-radius:999px;
+  border:2px solid rgba(255,255,255,.9);
+  box-shadow:0 0 0 2px rgba(0,0,0,.35) inset, 0 0 10px rgba(0,0,0,.25);
+  cursor:help;
+}
+
+/* responsive */
+@media (max-width:1100px){ .result-row{flex-wrap:wrap} }
+/* --- keep hero side-by-side on desktop --- */
+@media (min-width: 1600px){
+  .page-container{ max-width: 1600px; }
+  .main-container{ flex-wrap: nowrap; gap: 34px; }
+  .left-content{ max-width: 600px; }
+  .right-image img{ width: 600px; }
+}
+
+/* ===== Palette (position & dots) ===== */
+/* ให้ .palette ยึดตำแหน่งกับกรอบของวิดีโอ */
+.media-wrap{ position: relative; }
+
+/* ตำแหน่งกลุ่มพาเล็ตด้านในกรอบ (ขวา) */
+.palette{
+  position: absolute;
+  right: -50px;     
+  top: 16px;      
+  list-style: none;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: 'Poppins', sans-serif;
-  background: #0c0c0c;
-  min-height: 100vh;
-  position: relative;
-  overflow: hidden;
-}
-
-/* วงกลมซ้ายบน */
-body::before {
-  content: '';
-  position: absolute;
-  width: 700px;
-  height: 700px;
-  top: -200px;
-  left: -200px;
-  border-radius: 50%;
-  background: radial-gradient(circle, #ff7eae, transparent 70%);
-  opacity: 0.3;
-  z-index: 0;
-}
-
-/* วงกลมขวาล่าง */
-body::after {
-  content: '';
-  position: absolute;
-  width: 800px;
-  height: 800px;
-  bottom: -300px;
-  right: -300px;
-  border-radius: 50%;
-  background: radial-gradient(circle, #7d82ff, transparent 70%);
-  opacity: 0.3;
-  z-index: 0;
-}
-
-/* กล่องเนื้อหาหลัก */
-.page-container {
-  max-width: 1200px;
-  margin: 40px auto;
-  background: #111;
-  border-radius: 25px;
-  padding: 30px 50px;
-  box-shadow: 0 18px 50px rgba(255, 255, 255, 0.1);
-  position: relative;
-  z-index: 1;
-}
-
-header .nav-container {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 40px;
+  flex-direction: column;
+  gap: 12px;     
+  z-index: 3;     
 }
 
-.logo {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #ffffff;
-}
 
-nav ul {
-  list-style: none;
-  display: flex;
-  gap: 40px;
-}
-
-nav ul li a {
-  text-decoration: none;
-  font-size: 1rem;
-  color: #ffffff;
-  font-weight: 600;
-  position: relative;
-}
-
-nav ul li a::after {
-  content: '';
-  display: block;
-  height: 3px;
-  width: 0;
-  background: #ff5e78;
-  transition: width 0.3s;
-  position: absolute;
-  bottom: -6px;
-  left: 0;
-}
-
-nav ul li a:hover::after {
-  width: 100%;
-}
-
-.main-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 40px;
-}
-
-.left-content {
-  flex: 1;
-}
-
-.left-content h1 {
-  font-size: 2.8rem;
-  font-weight: 700;
-  color: #ffffff;
-  line-height: 1.2;
-  margin-bottom: 20px;
-}
-
-.left-content h1 span {
-  color: #ff5e78;
-}
-
-.left-content p {
-  font-size: 1rem;
-  color: #cccccc;
-  margin-bottom: 30px;
-}
-
-/* ===== File Input (customized button) ===== */
-input[type="file"] {
-  display: block;
-  width: 100%;
-  padding: 12px;
-  margin-bottom: 20px;
-  border: 2px dashed #ff5e78;
-  border-radius: 30px;
-  background-color: #222;
-  font-size: 1rem;
-  color: white;
-  cursor: pointer;
-}
-
-input[type="file"]::file-selector-button {
-  background: linear-gradient(to right, #fc5c7d, #6a82fb);
-  border: none;
-  color: white;
-  padding: 8px 18px;
-  border-radius: 20px;
-  font-weight: bold;
-  cursor: pointer;
-  margin-right: 10px;
-  transition: 0.3s ease;
-}
-
-input[type="file"]::file-selector-button:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
-}
-
-input[type="file"]::-webkit-file-upload-button {
-  background: linear-gradient(to right, #fc5c7d, #6a82fb);
-  border: none;
-  color: white;
-  padding: 8px 18px;
-  border-radius: 20px;
-  font-weight: bold;
-  cursor: pointer;
-  margin-right: 10px;
-  transition: 0.3s ease;
-}
-
-input[type="file"]::-webkit-file-upload-button:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
-}
-
-/* ===== Upload Button ===== */
-button {
-  width: 100%;
-  padding: 14px;
-  font-size: 1rem;
-  background: linear-gradient(to right, #fc5c7d, #6a82fb);
-  border: none;
-  border-radius: 30px;
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-  transition: 0.3s ease;
-}
-
-button:hover {
-  transform: scale(1.03);
-  box-shadow: 0 6px 18px rgba(255, 255, 255, 0.15);
-}
-
-/* ===== Upload Status ===== */
-#status {
-  margin-top: 20px;
-  font-size: 1rem;
-  background-color: #333;
-  color: #8fffbc;
-  padding: 10px 20px;
-  border-radius: 12px;
-  display: inline-block;
-  box-shadow: inset 0 0 4px rgba(255, 255, 255, 0.1);
-}
-
-/* ===== รูปภาพนก ===== */
-.right-image {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-}
-
-.right-image img {
-  width: 150%;
-  height: auto;
-  transform: scale(1.3) translateY(40px);
-  border-radius: 20px;
+.palette .swatch{
+  width: 28px;            
+  border: 2px solid rgba(255,255,255,.95);
+  box-shadow:
+    0 0 0 2px rgba(0,0,0,.35) inset,
+    0 2px 10px rgba(0,0,0,.25);
 }

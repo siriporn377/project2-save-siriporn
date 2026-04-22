@@ -1,4 +1,6 @@
-# segment/segment2.py
+import matplotlib
+matplotlib.use('Agg')  # กัน error เวลาไม่มีจอแสดงผล
+
 import os, sys
 import argparse
 import numpy as np
@@ -15,28 +17,27 @@ from transformers import AutoProcessor, CLIPSegForImageSegmentation
 # -------- Args --------
 def parse_args():
     p = argparse.ArgumentParser()
-    p.add_argument("IMG_PATH", nargs="?", default="segment/photo/input44.jpg", ######################################################
-                   help="พาธรูปอินพุต")
-    p.add_argument("--mode", default="bird_branch", choices=["bird_branch","bird_only"],
-                   help="เลือกโหมด: bird_branch หรือ bird_only")
-    p.add_argument("--max-side", type=int, default=0,
-                   help="0 = ไม่ย่อ, >0 = จำกัดด้านยาวสุด (เช่น 500)")
+    p.add_argument("IMG_PATH", nargs="?", default="segment/photo/input44.jpg", help="พาธรูปอินพุต")
+    p.add_argument("--mode", default="bird_branch", choices=["bird_branch","bird_only"], help="เลือกโหมด: bird_branch หรือ bird_only")
+    p.add_argument("--max-side", type=int, default=0, help="0 = ไม่ย่อ, >0 = จำกัดด้านยาวสุด (เช่น 500/960)")
+    p.add_argument("--k", type=int, default=6, help="จำนวนสี (K) สำหรับ K-means [1..9]")
     return p.parse_args()
 
 args = parse_args()
 IMG_PATH = args.IMG_PATH
 MODE     = args.mode.lower()
 MAX_SIDE = max(0, int(args.max_side))
+K        = max(1, min(9, int(args.k)))
 
-# ชื่อไฟล์/โฟลเดอร์ผลลัพธ์ (มี suffix ตาม max-side เพื่อไม่ทับกัน)
+# ---- ตั้งชื่อเอาต์พุต (ใส่ suffix ตาม max-side และ k กันทับ) ----
 NAME     = os.path.splitext(os.path.basename(IMG_PATH))[0]
-NAME_OUT = f"{NAME}_s{MAX_SIDE}" if MAX_SIDE > 0 else NAME
+NAME_OUT = (f"{NAME}_s{MAX_SIDE}_k{K}" if MAX_SIDE > 0 else f"{NAME}_k{K}")
 OUT_DIR  = os.path.join("segment", "output", "kmeans_1seg", NAME_OUT)
 os.makedirs(OUT_DIR, exist_ok=True)
 
 # -------- Params --------
 MODEL_ID   = "CIDAS/clipseg-rd64-refined"
-TH_BIRD    = 0.45
+TH_BIRD    = 0.45 #0.45
 TH_RAIL_HI = 0.40
 TH_RAIL_LO = 0.30
 RAIL_WORDS = [
@@ -46,17 +47,14 @@ RAIL_WORDS = [
 
 GRABCUT_ITERS  = 5
 PAD_BG         = 15
-BRIDGE_DILATE  = 41   # ขยายนกให้ไปแตะราวมากขึ้น
+BRIDGE_DILATE  = 41
 
-# แถบค้นหาใกล้เท้านก + ช่วง X รอบนก
 BAND_TOP_PAD   = 80
 BAND_BOT_PAD   = 70
 X_MARGIN_LEFT  = 160
 X_MARGIN_RIGHT = 260
 
-# Felzenszwalb & K-means
 FELZ_SCALE, FELZ_SIGMA, FELZ_MINSIZE = 120, 0.6, 60
-K = 9
 CRITERIA = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.5)
 ATTEMPTS = 10
 MIN_AREA_FRAC = 0.001
@@ -78,27 +76,26 @@ def resize_keep_aspect(img, max_side=0):
 bgr = cv.imread(IMG_PATH)
 if bgr is None:
     raise FileNotFoundError(f"ไม่พบไฟล์รูป: {IMG_PATH}")
-
-# ย่อก่อนประมวลผล (ถ้าเลือก)
 bgr = resize_keep_aspect(bgr, MAX_SIDE)
 
 rgb = cv.cvtColor(bgr, cv.COLOR_BGR2RGB)
 H, W = rgb.shape[:2]
 pil_img = Image.fromarray(rgb)
 
-# -------- CLIPSeg (รองรับหลายพรอมป์) --------
+# -------- CLIPSeg (รองรับหลายพรอมป์ + ใช้ GPU ถ้ามี) --------
+device = "cuda" if torch.cuda.is_available() else "cpu"
 processor = AutoProcessor.from_pretrained(MODEL_ID, use_fast=True)
-model = CLIPSegForImageSegmentation.from_pretrained(MODEL_ID).eval()
+model = CLIPSegForImageSegmentation.from_pretrained(MODEL_ID).to(device).eval()
 
 def clipseg_mask(prompts, th):
     if isinstance(prompts, str):
         prompts = [prompts]
     images = [pil_img] * len(prompts)
-    inputs = processor(text=prompts, images=images, padding=True, return_tensors="pt")
+    inputs = processor(text=prompts, images=images, padding=True, return_tensors="pt").to(device)
     with torch.no_grad():
-        logits = model(**inputs).logits  # (n,352,352)
-        probs  = torch.sigmoid(logits).cpu().numpy()
-    m = probs.max(axis=0)  # union ของหลายพรอมป์
+        logits = model(**inputs).logits
+        probs  = torch.sigmoid(logits).detach().to("cpu").numpy()
+    m = probs.max(axis=0)                # union หลายพรอมป์
     m = cv.resize(m, (W, H), interpolation=cv.INTER_CUBIC)
     return (m >= th).astype(np.uint8) * 255
 
@@ -108,7 +105,7 @@ def feet_contact_band_and_bbox(bird_mask):
         y0 = int(H*0.65)
         band = np.zeros((H,W), np.uint8); band[max(0,y0-60):min(H,y0+60),:] = 255
         return band, (0, W-1), y0
-    y0 = int(np.percentile(ys, 92))  # ใกล้ปลายล่างของนก
+    y0 = int(np.percentile(ys, 92))
     x1, x2 = int(xs.min()), int(xs.max())
     band = np.zeros((H,W), np.uint8)
     y1 = max(0, y0 - BAND_TOP_PAD)
@@ -117,17 +114,15 @@ def feet_contact_band_and_bbox(bird_mask):
     return band, (x1, x2), y0
 
 def rail_from_texture_fallback(bgr, band, bird_bbox):
-    """หาไม้จาก texture (Lap-of-Gaussian) ในแถบ band + จำกัด X รอบตัวนก"""
     x1, x2 = bird_bbox
     rx1 = max(0, x1 - X_MARGIN_LEFT)
     rx2 = min(W-1, x2 + X_MARGIN_RIGHT)
 
     roi = np.zeros((H,W), np.uint8)
     roi[:, rx1:rx2+1] = 255
-    roi = cv.bitwise_and(roi, band)
+    roi = cv.bitwise_and(roi, band) #เอาโซนที่สนใจมาตัดซ้ำ
 
     gray = cv.cvtColor(bgr, cv.COLOR_BGR2GRAY)
-    # texture: Laplacian + blur
     lap = cv.Laplacian(gray, cv.CV_32F, ksize=3)
     lap = np.abs(lap)
     lap = cv.GaussianBlur(lap, (5,5), 0)
@@ -140,12 +135,10 @@ def rail_from_texture_fallback(bgr, band, bird_bbox):
     tex = np.zeros((H,W), np.uint8)
     tex[(lap_u8 >= thr_val) & (roi > 0)] = 255
 
-    # ตัดโทนที่ "เป็นนกจัดๆ" (สีสดมาก) ออก
     hsv = cv.cvtColor(bgr, cv.COLOR_BGR2HSV)
-    birdish = (hsv[:,:,1] > 140) & (((hsv[:,:,0] < 25) | (hsv[:,:,0] > 150)))  # แดง/ม่วงจัด
+    birdish = (hsv[:,:,1] > 140) & (((hsv[:,:,0] < 25) | (hsv[:,:,0] > 150)))
     tex[birdish] = 0
 
-    # ทำให้ต่อเนื่องและหนาขึ้น
     tex = cv.morphologyEx(tex, cv.MORPH_CLOSE, cv.getStructuringElement(cv.MORPH_ELLIPSE,(17,17)), iterations=1)
     tex = cv.morphologyEx(tex, cv.MORPH_OPEN,  cv.getStructuringElement(cv.MORPH_ELLIPSE,(7,7)), iterations=1)
     tex = cv.dilate(tex, cv.getStructuringElement(cv.MORPH_ELLIPSE,(21,21)), iterations=1)
@@ -157,12 +150,11 @@ bird = clipseg_mask("bird", TH_BIRD)
 if MODE == "bird_only":
     seed = bird.copy()
 else:
-    # ---- 2) Rail/branch via CLIPSeg ในแถบเท้านก ----
-    band, bbox, y0 = feet_contact_band_and_bbox(bird)
+    # ---- 2) หาไม้/ราวในแถบเท้านก ----
+    band, bbox, _ = feet_contact_band_and_bbox(bird)
     rail = clipseg_mask(RAIL_WORDS, TH_RAIL_HI)
     rail_band = cv.bitwise_and(rail, band)
 
-    # Fallback: ลดเกณฑ์ + ถ้ายังไม่พอ ใช้ texture fallback
     if cv.countNonZero(rail_band) < 500:
         rail = clipseg_mask(RAIL_WORDS, TH_RAIL_LO)
         rail_band = cv.bitwise_and(rail, band)
@@ -223,7 +215,7 @@ if len(fg_sids)==0:
 
 feat_lab = np.array(feat_lab, dtype=np.float32)
 mean_rgb = np.array(mean_rgb, dtype=np.float32)
-_, labels_fg, _ = cv.kmeans(feat_lab, K, None, CRITERIA, ATTEMPTS, cv.KMEANS_PP_CENTERS)
+_, labels_fg, _ = cv.kmeans(feat_lab, K, None, (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.5), 10, cv.KMEANS_PP_CENTERS)
 labels_fg = labels_fg.flatten()
 
 cluster_rgb = np.zeros((K,3), np.float32)
@@ -255,6 +247,7 @@ def clean_small_regions(mask, min_area):
             out[lbl==i] = 1
     return out.astype(bool)
 
+MIN_AREA_FRAC = 0.001
 min_area = max(1, int(mask_bool.sum() * MIN_AREA_FRAC))
 layers, titles = [], []
 for k in range(K):

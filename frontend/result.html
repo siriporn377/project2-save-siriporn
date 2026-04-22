@@ -1,203 +1,615 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Uploaded Result</title>
-  <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:,">
   <style>
-    body {
-      background: #0c0c0c;
-      font-family: 'Poppins', sans-serif;
-      color: white;
-      margin: 0;
-      padding: 0;
+    :root{
+      --media-w: 580px; --media-h: 340px;
+      --seek-start:#5a5b61; --seek-end:#7a7b82; --seek-thumb-border:#cfd1d6;
+      --menu-bg:#1b1b1f; --menu-fg:#fff; /* 1b1b1f*/
+    }
+    [hidden]{display:none!important}
+    html,body{margin:0;padding:0;background:#0f1115;color:#c9d1d9;font-family:"Poppins",system-ui,-apple-system,"Segoe UI","Helvetica Neue",Arial}
+
+    /* page + header */
+    .page{max-width:1280px;margin:0 auto;padding:30px 40px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+    .logo{color:#fff;font-weight:800;letter-spacing:.2px}
+    header nav a{color:#c9d1d9;text-decoration:none;font-weight:700}
+    header nav a:hover{text-decoration:underline}
+    h1.title{color:#fff;margin:8px 0 22px;font-size:2rem}
+
+    /* 2 columns centered */
+    .result-row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:40px;
+      align-items:start;
+      justify-items:center;
+    }
+    .col{
+      display:flex;flex-direction:column;gap:10px;
+      align-items:center;max-width:var(--media-w);width:100%;
+    }
+    .col h3{
+      color:#fff;margin:0 0 10px;
+      align-self:center; width:100%; text-align:center;
     }
 
-    .page-container {
-      padding: 40px;
+    /* media + loader */
+    .media-wrap{position:relative; padding-right:56px;}  /* กันไม่ให้ palette ซ้อนกรอบ */
+    .media-frame{
+      width:var(--media-w);height:var(--media-h);max-width:100%;
+      border-radius:22px;overflow:hidden;background:#000;
+      box-shadow:0 0 12px rgba(255,255,255,.08);
+      display:flex;align-items:center;justify-content:center;position:relative
     }
+    .media-frame > img,.media-frame > video{width:100%;height:100%;object-fit:contain;display:block;background:#000}
+    .media-frame.loading::after{content:none!important;display:none!important}
+    .media-frame.loading video{opacity:0}
+    .media-frame .loader-wrap{position:absolute;inset:0;display:none;align-items:center;justify-content:center}
+    .media-frame.loading .loader-wrap{display:flex}
+    .loader{width:80px;height:50px;position:relative}
+    .loader-text{position:absolute;top:0;margin:0;color:#C8B6FF;animation:text_713 3.5s ease both infinite;font-size:.8rem;letter-spacing:1px}
+    .load{background:#9A79FF;border-radius:50px;display:block;height:16px;width:16px;bottom:0;position:absolute;transform:translateX(64px);animation:loading_713 3.5s ease both infinite}
+    .load::before{content:"";position:absolute;inset:0;background:#D1C2FF;border-radius:inherit;animation:loading2_713 3.5s ease both infinite}
+    @keyframes text_713{0%{letter-spacing:1px;transform:translateX(0)}40%{letter-spacing:2px;transform:translateX(26px)}80%{letter-spacing:1px;transform:translateX(32px)}90%{letter-spacing:2px;transform:translateX(0)}100%{letter-spacing:1px;transform:translateX(0)}}
+    @keyframes loading_713{0%{width:16px;transform:translateX(0)}40%{width:100%;transform:translateX(0)}80%{width:16px;transform:translateX(64px)}90%{width:100%;transform:translateX(0)}100%{width:16px;transform:translateX(0)}}
+    @keyframes loading2_713{0%{transform:translateX(0);width:16px}40%{transform:translateX(0);width:80%}80%{width:100%;transform:translateX(0)}90%{width:80%;transform:translateX(15px)}100%{transform:translateX(0);width:16px}}
+    .img-meta{font-size:.9rem;opacity:.9}
 
-    .nav-container {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    /* controls */
+    .controls{display:flex;flex-direction:column;gap:10px;margin-top:10px;width:100%}
+    .pc-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center}
+    .time{font-variant-numeric:tabular-nums;white-space:nowrap}
+    .seek{ -webkit-appearance:none; appearance:none; height:10px; width:420px; max-width:100%; border-radius:999px; outline:none; background:linear-gradient(90deg,var(--seek-start),var(--seek-end)); }
+    .seek::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%; background:#fff; border:1.5px solid var(--seek-thumb-border); box-shadow:0 2px 10px rgba(0,0,0,.35); cursor:pointer; }
+    .seek::-moz-range-thumb{ width:16px; height:16px; border-radius:50%; background:#fff; border:1.5px solid var(--seek-thumb-border); box-shadow:0 2px 10px rgba(0,0,0,.35); cursor:pointer; }
+
+    /* nebula buttons (play/skip/speed) */
+    .btn{position:relative;height:2.4rem;min-width:4.8rem;padding:0 12px;border-radius:2rem;overflow:hidden;cursor:pointer;border:double 2px transparent;background-image:linear-gradient(#212121,#212121),linear-gradient(137.48deg,#ffdb3b 10%,#fe53bb 45%,#8f51ea 67%,#0044ff 87%);background-origin:border-box;background-clip:padding-box,border-box;background-size:300% 300%;animation:gradient_301 5s ease infinite;color:#fff;font-size:.9rem;font-weight:800;letter-spacing:.2px;text-shadow:0 0 3px rgba(255,255,255,.4)}
+    .btn.small{min-width:4.2rem;padding:0 10px}
+    .btn:hover{transform:scale(1.04)}
+    .btn:active{border:double 3px #48476e;animation:none}
+    .btn[aria-disabled="true"]{opacity:.45;pointer-events:none}
+    .speed{ -webkit-appearance:none; appearance:none; height:2.4rem; min-width:4.6rem; padding:0 14px; border-radius:2rem; color:#fff; font-weight:800; letter-spacing:.2px; border:double 2px transparent; background-image:linear-gradient(#212121,#212121),linear-gradient(137.48deg,#ffdb3b 10%,#fe53bb 45%,#8f51ea 67%,#0044ff 87%); background-origin:border-box; background-clip: padding-box, border-box; background-size:300% 300%; animation:gradient_301 5s ease infinite; }
+    .speed option{background:var(--menu-bg);color:var(--menu-fg)}
+    @keyframes gradient_301{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+
+    /* Number of Colors dropdown */
+    .rebox{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px;justify-content:center}
+    .color-button{position:relative}
+    .color-button .button{background:#78e3e0;color:#212121;padding:8px 12px;font-size:14px;font-weight:800;border:2px solid transparent;border-radius:14px;cursor:pointer}
+    .color-button .dropdown{display:none;position:absolute;right:0;top:calc(100% + 4px);min-width:170px;background:#212121;border:2px solid #78e3e0;border-radius:0 14px 14px 14px;z-index:30}
+    .color-button.open .dropdown{display:block}
+    .color-button.open .button{border-radius:14px 14px 0 0}
+    .color-button .dropdown a{color:#78e3e0;padding:8px 10px;text-decoration:none;display:block;font-size:13px}
+    .color-button .dropdown a:hover{background:#78e3e0;color:#212121}
+
+    /* palette dots (hide while processing) */
+    .palette{position:absolute;right:0;top:12px;list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;z-index:30}
+    .swatch{width:26px;height:26px;border-radius:999px;border:2px solid rgba(255,255,255,.9);box-shadow:0 0 0 2px rgba(0,0,0,.35) inset, 0 0 10px rgba(0,0,0,.25);cursor:help}
+    body.busy .palette{display:none!important}
+    .media-frame.loading + .palette{display:none!important}
+
+    /* download buttons: comic style */
+    .download-center{display:flex;gap:16px;justify-content:center;margin-top:26px}
+    .comic-button{
+      display:inline-block;padding:10px 20px;min-width:140px;font-size:20px;font-weight:800;text-align:center;text-decoration:none;
+      color:#fff;background:#ff5252;border:2px solid #000;border-radius:10px;box-shadow:5px 5px 0 #000;transition:all .2s ease;cursor:pointer
     }
+    .comic-button:hover{background:#fff;color:#ff5252;border-color:#ff5252;box-shadow:5px 5px 0 #ff5252}
+    .comic-button:active{background:#fcf414;color:#000;box-shadow:none;transform:translateY(4px)}
+    .comic-button[aria-disabled="true"]{opacity:.45;pointer-events:none;filter:saturate(.3)}
+    .comic-button.blue{background:#4aa3ff;color:#fff;border-color:#000}
+    .comic-button.blue:hover{background:#fff;color:#4aa3ff;border-color:#4aa3ff;box-shadow:5px 5px 0 #4aa3ff}
 
-    .logo {
-      font-size: 1.8rem;
-      font-weight: bold;
-    }
+    /* BUSY: ซ่อนปุ่มทั้งหมดระหว่างประมวลผล */
+    body.busy #controlsWrap,
+    body.busy .rebox,
+    body.busy .download-center { display:none !important; }
 
-    nav ul {
-      display: flex;
-      gap: 40px;
-      list-style: none;
-    }
-
-    nav a {
-      text-decoration: none;
-      color: white;
-      font-weight: 600;
-    }
-
-    .result-container {
-      display: flex;
-      justify-content: space-around;
-      margin-top: 40px;
-      flex-wrap: wrap;
-    }
-
-    .image-box {
-      text-align: center;
-    }
-
-    .image-box img,
-    .image-box video {
-      max-width: 300px;
-      border-radius: 20px;
-      margin-top: 15px;
-    }
-
-    .gif-controls {
-      margin-top: 20px;
-      display: flex;
-      justify-content: center;
-      gap: 15px;
-    }
-
-    .gif-controls button {
-      padding: 10px 24px;
-      font-size: 1rem;
-      border-radius: 25px;
-      border: none;
-      font-weight: bold;
-      color: white;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      transition: 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    #toggleBtn {
-      background: linear-gradient(to right, #5ee7df, #b490ca);
-    }
-
-    .btn-restart {
-      background: linear-gradient(to right, #ff9966, #ff5e62);
-    }
-
-    .btn-restart svg {
-      margin-right: 8px;
-      vertical-align: middle;
-    }
-
-    .gif-controls button:hover {
-      transform: scale(1.05);
-    }
-
-    .btn {
-      display: inline-block;
-      margin: 10px;
-      padding: 12px 25px;
-      border-radius: 25px;
-      text-decoration: none;
-      color: white;
-      font-weight: bold;
-    }
-
-    .btn.download {
-      background-color: #6a82fb;
-    }
-
-    .back-arrow {
-      text-decoration: none;
-      color: white;
-      font-size: 1.5rem;
-      margin-right: 10px;
-    }
-
-    .heading-with-arrow {
-      margin-top: 30px;
-      display: flex;
-      align-items: center;
-      font-size: 2rem;
-      gap: 10px;
+    @media(max-width:1180px){
+      .result-row{grid-template-columns:1fr;gap:24px}
+      .col{max-width:100%}
+      .media-wrap{padding-right:0}
+      .palette{right:12px}
     }
   </style>
 </head>
 <body>
-  <div class="page-container">
+  <div class="page">
     <header>
-      <div class="nav-container">
-        <div class="logo">SketchColor</div>
-        <nav>
-          <ul>
-            <li><a href="index.html">HOME</a></li>
-            <li><a href="#">GALLERY</a></li>
-            <li><a href="#">HELP</a></li>
-          </ul>
-        </nav>
-      </div>
+      <div class="logo">SketchColor</div>
+      <nav><a href="index.html">HOME</a></nav>
     </header>
 
-    <h1 class="heading-with-arrow">
-      <a href="index.html" class="back-arrow">⬅</a>
-      <span>Uploaded Result</span>
-    </h1>
+    <h1 class="title"><a href="index.html" style="color:#fff;text-decoration:none;margin-right:10px">⬅</a>Upload Result</h1>
 
-    <div class="result-container">
-      <div class="image-box">
-        <h3>📤 Original Upload</h3>
-        <img id="originalImage" src="" alt="Original">
+    <div class="result-row">
+      <div class="col">
+        <h3>Original Upload</h3>
+        <div class="media-frame">
+          <img id="originalImage" alt="Original">
+        </div>
+        <div id="origMeta" class="img-meta"></div>
       </div>
-      <div class="image-box">
-        <h3>🎨 Processed Result</h3>
-        <video id="resultVideo" width="300" autoplay loop muted playsinline>
-          <source src="stroke_render_input18.mp4" type="video/mp4">
-          Your browser does not support the video tag.
-        </video>
-        <div class="gif-controls">
-          <button id="toggleBtn" onclick="togglePlayPause()">⏸ Pause</button>
-          <button class="btn-restart" onclick="restartVideo()">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="white">
-              <path d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5a5.002 5.002 0 01-9.9 1H5.08a7.003 7.003 0 006.92 6c3.87 0 7-3.13 7-7s-3.13-7-7-7z"/>
-            </svg>
-            Restart
-          </button>
+
+      <div class="col">
+        <h3>Process Result</h3>
+
+        <div class="media-wrap">
+          <div id="processedFrame" class="media-frame loading">
+            <div class="loader-wrap"><div class="loader"><span class="loader-text">loading</span><span class="load"></span></div></div>
+            <video id="resultVideo" preload="metadata" muted playsinline>
+              <source id="resultSrc" type="video/mp4">
+            </video>
+          </div>
+          <ul id="palette" class="palette" aria-label="Colors used"></ul>
+        </div>
+
+        <!-- controls -->
+        <div id="controlsWrap" class="controls">
+          <div class="pc-row">
+            <span id="timeLabel" class="time">00:00 / 00:00</span>
+            <input id="seekBar" class="seek" type="range" min="0" max="1000" step="1" value="0"/>
+          </div>
+          <div class="pc-row">
+            <button id="skipBackBtn" class="btn small" title="Back 10 seconds">⏮ 10s</button>
+            <button id="toggleBtn" class="btn">▶ Play</button>
+            <button id="skipFwdBtn" class="btn small" title="Forward 10 seconds">10s ⏭</button>
+            <select id="speedSel" class="speed" title="Speed">
+              <option value="0.5">0.5×</option><option value="0.75">0.75×</option>
+              <option value="1" selected>1×</option><option value="1.25">1.25×</option>
+              <option value="1.5">1.5×</option><option value="2">2×</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Number of Colors + Process -->
+        <div class="rebox">
+          <div class="color-button" id="reColorWrap">
+            <button class="button" id="reColorBtn" aria-haspopup="true" aria-expanded="false">Number of Colors: 6 ▾</button>
+            <div class="dropdown" id="reColorMenu" role="menu" aria-label="Choose colors">
+              <a href="#" data-k="1">1 color</a><a href="#" data-k="2">2 colors</a><a href="#" data-k="3">3 colors</a>
+              <a href="#" data-k="4">4 colors</a><a href="#" data-k="5">5 colors</a><a href="#" data-k="6">6 colors</a>
+              <a href="#" data-k="7">7 colors</a><a href="#" data-k="8">8 colors</a><a href="#" data-k="9">9 colors</a>
+            </div>
+          </div>
+          <button id="reprocessBtn" class="btn" title="Process with new colors">Process</button>
+
+        </div>
+
+        <!-- download buttons (comic style) -->
+        <div class="download-center">
+          <a id="downloadVideoBtn" class="comic-button blue" aria-disabled="true">MP4</a>
+          <a id="downloadImageBtn" class="comic-button" aria-disabled="true">Final JPG</a>
         </div>
       </div>
-    </div>
-
-    <div style="text-align: center; margin-top: 40px;">
-      <a id="downloadLink" class="btn download" download> Download Result</a>
     </div>
   </div>
 
   <script>
-    const video = document.getElementById('resultVideo');
-    const toggleBtn = document.getElementById('toggleBtn');
+  const API_BASE = "";
+  const NGROK_HDR = { "ngrok-skip-browser-warning": "any" };
+  const NGROK_QS  = "ngrok-skip-browser-warning=1";
+  const $ = id => document.getElementById(id);
+  const sleep = ms => new Promise(r=>setTimeout(r,ms));
+  const setDis = (el, v)=> el && el.setAttribute("aria-disabled", v ? "true" : "false");
+  const fmt = t => { if (!isFinite(t) || t < 0) t = 0; const h=Math.floor(t/3600),m=Math.floor((t%3600)/60),s=Math.floor(t%60); const z=n=>n.toString().padStart(2,'0'); return h>0?`${h}:${z(m)}:${z(s)}`:`${z(m)}:${z(s)}`; };
+  const now = ()=>Date.now();
+  const addQS = (u)=> u+(u.includes("?")?"&":"?")+NGROK_QS;
 
-    document.getElementById('originalImage').src = localStorage.getItem('previewURL');
-    document.getElementById('downloadLink').href = 'stroke_render_input18.mp4';
+  function revokeCurrentURL(){ try{ if (currentObjectURL) { URL.revokeObjectURL(currentObjectURL); currentObjectURL=null; } }catch(_){} }
 
-    function togglePlayPause() {
-      if (video.paused) {
-        video.play();
-        toggleBtn.innerHTML = '⏸ Pause';
-      } else {
-        video.pause();
-        toggleBtn.innerHTML = '▶ Play';
+  // ---------- K helpers (persist across refresh) ----------
+  function parseK(raw, fallback=6){
+    const s = String(raw??"").trim();
+    const m = s.match(/(\d+)/);
+    const k = m ? +m[1] : +s;
+    if (!Number.isFinite(k)) return fallback;
+    return Math.min(9, Math.max(1, k));
+  }
+  function getInitK(){
+    try{
+      const d = JSON.parse(sessionStorage.getItem("sketch_result")||"{}");
+      const k1 = parseK(d.k, NaN);
+      if (Number.isFinite(k1)) return k1;
+    }catch(_){}
+    // URL param (ถ้าส่งมาแบบ result.html?k=4)
+    try{
+      const urlK = parseK(new URLSearchParams(location.search).get('k'), NaN);
+      if (Number.isFinite(urlK)) return urlK;
+    }catch(_){}
+    // fallback ที่เราเก็บไว้เอง
+    const k2 = parseK(sessionStorage.getItem("sketch_pref_k"), NaN);
+    if (Number.isFinite(k2)) return k2;
+    return 6;
+  }
+  function rememberK(k){
+    try{
+      sessionStorage.setItem('sketch_pref_k', String(k));
+      const d = JSON.parse(sessionStorage.getItem('sketch_result') || '{}');
+      d.k = k;
+      sessionStorage.setItem('sketch_result', JSON.stringify(d));
+    }catch(_){}
+  }
+
+  function hexToRgb(hex){ const m=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex||""); return m?{r:parseInt(m[1],16),g:parseInt(m[2],16),b:parseInt(m[3],16)}:{r:0,g:0,b:0}; }
+  function rgbToHsl(r,g,b){ r/=255;g/=255;b/=255; const max=Math.max(r,g,b),min=Math.min(r,g,b); let h,s,l=(max+min)/2; if(max===min){h=0;s=0}else{const d=max-min; s=l>0.5?d/(2-max-min):d/(max+min); switch(max){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;case b:h=(r-g)/d+4;break} h*=60} return {h,s,l}; }
+  function tonePrefix(l){ if(l<=0.20)return"Very Dark "; if(l<=0.28)return"Dark "; if(l>=0.85)return"Very Light "; if(l>=0.72)return"Light "; return""; }
+  function prettyColorName(hex){ const {r,g,b}=hexToRgb(hex); const {h,s,l}=rgbToHsl(r,g,b); const v=Math.max(r,g,b)/255;
+    if(v<0.10)return"Black"; if(s<0.10){ if(l<0.25)return"Dark Gray"; if(l<0.60)return"Gray"; if(l<0.90)return"Light Gray"; return"White"; }
+    if(l>0.93&&s<0.25)return"White";
+    if(h>=15&&h<45&&l<0.65)return tonePrefix(l)+"Brown";
+    if(h>=45&&h<95&&l<0.60)return tonePrefix(l)+"Olive";
+    let base; if(h<12||h>=348)base="Red"; else if(h<28)base="Orange"; else if(h<45)base="Yellow"; else if(h<66)base="Yellow Green"; else if(h<150)base="Green"; else if(h<175)base="Teal"; else if(h<195)base="Cyan"; else if(h<215)base="Sky Blue"; else if(h<235)base="Blue"; else if(h<260)base="Indigo"; else if(h<290)base="Purple"; else if(h<330)base="Magenta"; else base="Pink";
+    return tonePrefix(l)+base;
+  }
+
+  function getActiveK(){
+    if (typeof currentK === "number" && currentK) return currentK;
+    if (typeof selectedK === "number" && selectedK) return selectedK;
+    return getInitK();
+  }
+
+  const resultCache = new Map(); // K -> { blob, palette }
+  let currentK = null;
+  let selectedK = null;
+  let currentObjectURL = null;
+
+  async function renderPalette(job_id, colorsFromCache){
+    const ul = $("palette"); if (!ul) return;
+    ul.innerHTML = "";
+    const colors = Array.isArray(colorsFromCache) ? colorsFromCache : null;
+    if (colors){
+      colors.forEach(hex=>{
+        const li=document.createElement("li");
+        li.className="swatch"; li.style.background=hex;
+        const label=`${prettyColorName(hex)} ${hex}`;
+        li.title=label; li.setAttribute("aria-label",label);
+        ul.appendChild(li);
+      });
+      return;
+    }
+    try{
+      const res = await fetch(`${API_BASE}/api/colors/${job_id}?_=${now()}`, {headers:NGROK_HDR, cache:"no-store"});
+      if (!res.ok) return;
+      const data = await res.json();
+      (data.colors||[]).forEach(hex=>{
+        const li=document.createElement("li");
+        li.className="swatch"; li.style.background=hex;
+        const label=`${prettyColorName(hex)} ${hex}`;
+        li.title=label; li.setAttribute("aria-label",label);
+        ul.appendChild(li);
+      });
+    }catch(e){ console.log("palette err", e); }
+  }
+
+  async function waitJobReady(job_id){
+    while(true){
+      try{
+        const s = await fetch(`${API_BASE}/api/job/${job_id}?_=${now()}`, {headers:NGROK_HDR, cache:"no-store"}).then(r=>r.json());
+        if (s.ready && s.result_url) return s;
+      }catch(_){}
+      await sleep(1000);
+    }
+  }
+
+  async function tryLoadCached(job_id, k){
+    try{
+      const url = `${API_BASE}/api/video_k/${job_id}?k=${k}&${NGROK_QS}&_=${now()}`;
+      const r   = await fetch(url, { headers: NGROK_HDR, cache: "no-store" });
+      if (!r.ok) return false;
+      const blob = await r.blob();
+
+      const newURL = URL.createObjectURL(blob);
+      revokeCurrentURL();
+      currentObjectURL = newURL;
+      $("resultSrc").src = currentObjectURL;
+      $("resultVideo").load();
+
+      let palColors = [];
+      try{
+        const pc = await fetch(`${API_BASE}/api/colors_k/${job_id}?k=${k}&_=${now()}`, { headers: NGROK_HDR, cache: "no-store" }).then(x=>x.json());
+        palColors = pc.colors || [];
+      }catch(_){}
+
+      resultCache.set(k, { blob, palette: palColors });
+      currentK = k;
+      rememberK(currentK);
+      enableAll(true);
+      renderPalette(job_id, palColors);
+      return true;
+    }catch(_){
+      return false;
+    }
+  }
+
+  async function snapshotK(job_id, k){
+    try{ await fetch(`${API_BASE}/api/cache/${job_id}?k=${k}&_=${now()}`, { headers: NGROK_HDR, cache:"no-store" }); }catch(_){}
+  }
+
+  async function reprocess(job_id, k, hooks){
+    const { onStart, onSwap } = hooks || {};
+    try{
+      onStart && onStart();
+      const fd = new FormData(); fd.append("k", String(k));
+      const r = await fetch(`${API_BASE}/api/reprocess/${job_id}`, { method:"POST", body:fd, headers:NGROK_HDR });
+      if (!r.ok) throw new Error(await r.text());
+      const st = await waitJobReady(job_id);
+      onSwap && onSwap(st);
+    }catch(e){
+      console.error(e); alert("Re-process failed.");
+      throw e;
+    }
+  }
+
+  function setLoadingUI(on){
+    const frame=$("processedFrame");
+    const btnVid=$("downloadVideoBtn"), btnImg=$("downloadImageBtn");
+    const btnPause=$("toggleBtn"), btnBack=$("skipBackBtn"), btnFwd=$("skipFwdBtn");
+    const seekBar=$("seekBar"), speedSel=$("speedSel");
+    const reBtn=$("reprocessBtn");
+
+    // ซ่อน/โชว์ปุ่มทั้งหมดด้วย busy class
+    if (on){ document.body.classList.add("busy"); }
+    else   { document.body.classList.remove("busy"); }
+
+    if (on){
+      frame.classList.add("loading");
+      setDis(reBtn,true); setDis(btnVid,true); setDis(btnImg,true);
+      setDis(btnPause,true); setDis(btnBack,true); setDis(btnFwd,true);
+      if (seekBar) seekBar.disabled = true; if (speedSel) speedSel.disabled = true;
+    }else{
+      frame.classList.remove("loading");
+      setDis(reBtn,false); setDis(btnVid,false); setDis(btnImg,false);
+      setDis(btnPause,false); setDis(btnBack,false); setDis(btnFwd,false);
+      if (seekBar) seekBar.disabled = false; if (speedSel) speedSel.disabled = false;
+    }
+  }
+
+  function enableAll(playable){
+    const frame=$("processedFrame");
+    const btnVid=$("downloadVideoBtn"), btnImg=$("downloadImageBtn");
+    const btnPause=$("toggleBtn"), btnBack=$("skipBackBtn"), btnFwd=$("skipFwdBtn");
+    const seekBar=$("seekBar"), speedSel=$("speedSel");
+    frame.classList.remove("loading");
+    setDis(btnVid,false); setDis(btnImg,false);
+    setDis(btnPause,!playable); setDis(btnBack,!playable); setDis(btnFwd,!playable);
+    if (seekBar) seekBar.disabled = !playable;
+    if (speedSel) speedSel.disabled = !playable;
+  }
+
+  function setKBtn(k){ const reBtn=$("reColorBtn"); if (reBtn) reBtn.textContent = `Number of Colors: ${k} ▾`; }
+
+  // ----------------- init -----------------
+  async function init(){
+    const frame=$("processedFrame"), video=$("resultVideo"), orig=$("originalImage");
+    const meta=$("origMeta"), btnVid=$("downloadVideoBtn");
+    const reWrap=$("reColorWrap"), reBtn=$("reColorBtn"), reMenu=$("reColorMenu"), reProcess=$("reprocessBtn");
+
+    video.removeAttribute('autoplay'); video.removeAttribute('loop');
+    video.autoplay=false; video.loop=false; video.setAttribute('playsinline',''); video.setAttribute('webkit-playsinline','');
+
+    let hasEnded=false, lastUserGesture=0;
+    ['click','keydown','touchend'].forEach(ev=>document.addEventListener(ev,()=>{lastUserGesture=Date.now()},{capture:true}));
+    const setPlayLabel = paused => { const b=$("toggleBtn"); if (b) b.textContent = paused ? "▶ Play" : "⏸ Pause"; };
+    video.addEventListener('ended',e=>{e.stopImmediatePropagation();hasEnded=true;try{video.pause();const d=video.duration||0;if(d>0)video.currentTime=Math.max(0,d-0.001)}catch(_){} setPlayLabel(true)},{capture:true});
+    video.addEventListener('play',e=>{const g=(Date.now()-lastUserGesture)<=600;if(hasEnded&&!g){e.stopImmediatePropagation();video.pause();}},{capture:true});
+
+    const pv = localStorage.getItem("previewURL"); if (pv && orig) orig.src = pv;
+   const name = sessionStorage.getItem("orig_name") || "image";
+const w = +(sessionStorage.getItem("orig_w") || 0);
+const h = +(sessionStorage.getItem("orig_h") || 0);
+const MAX_SIDE = 300;
+
+if (meta){
+  let sz   = "";
+  let proc = "";
+
+  if (w > 0 && h > 0){
+    // ขนาดต้นฉบับ
+    sz = ` size ${w}×${h} `;
+
+    // คิดขนาดหลังย่อให้ด้านยาวสุด = MAX_SIDE (ไม่ขยายเกินของเดิม)
+    const ratio = Math.min(1, MAX_SIDE / Math.max(w, h));
+    const pw = Math.round(w * ratio);
+    const ph = Math.round(h * ratio);
+
+    
+    proc = `· processed ${pw}×${ph}px`;
+  } else {
+    
+
+  }
+
+  meta.textContent = `${name}${sz} ${proc}`;
+}
+
+
+
+    const saved = sessionStorage.getItem("sketch_result");
+    if (!saved){ alert("Please upload an image first."); location.href="index.html"; return; }
+    const initData = JSON.parse(saved); const { job_id } = initData;
+
+    // ตั้งค่าเริ่มต้นของ K จาก session/URL
+    const initK = getInitK();
+    selectedK = initK;
+    setKBtn(initK);
+
+    // downloads
+    btnVid?.addEventListener("click", async (ev)=>{
+      const b = $("downloadVideoBtn");
+      if (b.getAttribute("aria-disabled")==="true") return ev.preventDefault();
+      ev.preventDefault();
+      const k = getActiveK();
+      try{
+        const url = addQS(`${API_BASE}/api/video_k/${job_id}?k=${k}&download=1&_=${now()}`);
+        const r   = await fetch(url, { headers: NGROK_HDR, cache:"no-store" });
+        if (!r.ok){
+          alert(`ยังไม่มีวิดีโอของ K${k} ให้กด Process ให้เสร็จก่อน แล้วค่อยดาวน์โหลด`);
+          return;
+        }
+        const blob = await r.blob(); const o = URL.createObjectURL(blob);
+        const a = document.createElement("a"); a.href = o; a.download = `sketch_${job_id}_K${k}.mp4`;
+        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(o);
+      }catch(e){ console.error(e); alert("Cannot download MP4."); }
+    });
+
+    $("downloadImageBtn")?.addEventListener("click", async (ev)=>{
+      const btnImg=$("downloadImageBtn");
+      if (btnImg.getAttribute("aria-disabled")==="true") return ev.preventDefault();
+      ev.preventDefault();
+      const k = getActiveK();
+      try{
+        let url = addQS(`${API_BASE}/static/${job_id}/final_k${k}.jpg?_=${now()}`);
+        let r   = await fetch(url, { headers: NGROK_HDR, cache:"no-store" });
+        if (!r.ok){
+          url = addQS(`${API_BASE}/api/image/${job_id}?keep=1&_=${now()}`);
+          r   = await fetch(url, { headers: NGROK_HDR, cache:"no-store" });
+          if (!r.ok){
+            alert(`ยังไม่มีรูปของ K${k} ให้กด Process ให้เสร็จก่อน แล้วค่อยดาวน์โหลด`);
+            return;
+          }
+        }
+        const b = await r.blob(); const o = URL.createObjectURL(b);
+        const a = document.createElement("a"); a.href = o; a.download = `sketch_${job_id}_K${k}.jpg`;
+        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(o);
+      }catch(e){ console.error(e); alert("Cannot download JPG."); }
+    });
+
+    // play/pause + skip + speed
+    $("toggleBtn").onclick = ()=>{ if ($("toggleBtn").getAttribute("aria-disabled")==="true") return;
+      if (video.paused){ video.play().catch(()=>{}); setPlayLabel(false);} else { video.pause(); setPlayLabel(true);} };
+    const skip = d => { try{ const t=Math.max(0,Math.min((video.duration||0),(video.currentTime||0)+d)); video.currentTime=t; }catch(_){} };
+    $("skipBackBtn").onclick = ()=>{ if ($("skipBackBtn").getAttribute("aria-disabled")==="true") return; skip(-10); };
+    $("skipFwdBtn").onclick  = ()=>{ if ($("skipFwdBtn").getAttribute("aria-disabled")==="true") return; skip(+10); };
+    $("speedSel").onchange=()=>{ const v=parseFloat($("speedSel").value||"1"); video.playbackRate=(isFinite(v)&&v>0)?v:1; };
+
+    // time + seek
+    let scrubbing=false;
+    const updateTime = ()=>{ const cur=video.currentTime||0, dur=video.duration||0;
+      $("timeLabel").textContent=`${fmt(cur)} / ${fmt(dur)}`;
+      if (!scrubbing && dur>0){ $("seekBar").value=Math.round((cur/dur)*1000); }
+    };
+    video.addEventListener("timeupdate", updateTime);
+    video.addEventListener("durationchange", updateTime);
+    $("seekBar").addEventListener("input", ()=>{ const dur=video.duration||0; if (dur>0){ scrubbing=true; const t=(+$("seekBar").value/1000)*dur; $("timeLabel").textContent=`${fmt(t)} / ${fmt(dur)}`; video.currentTime=t; }});
+    $("seekBar").addEventListener("change", ()=>{ scrubbing=false; });
+
+    // first load -> ซ่อนปุ่มจนกว่าจะได้ผลลัพธ์
+    setLoadingUI(true);
+    (async ()=>{
+      const s = await waitJobReady(job_id);
+      const resURL = `${API_BASE}${s.result_url}?${NGROK_QS}&_=${now()}`;
+      const blob = await fetch(resURL, {headers:NGROK_HDR, cache:"no-store"}).then(r=>r.blob());
+
+      const newURL = URL.createObjectURL(blob);
+      revokeCurrentURL();
+      currentObjectURL = newURL;
+      $("resultSrc").src = currentObjectURL;
+      video.load();
+
+      let palColors=[];
+      try{
+        const pal = await fetch(`${API_BASE}/api/colors/${job_id}?_=${now()}`, {headers:NGROK_HDR, cache:"no-store"}).then(r=>r.json());
+        palColors = pal.colors || [];
+      }catch(_){}
+
+      // เดา K จากจำนวนสี (ถ้า 1..9), ไม่งั้นใช้ initK
+      let k0 = (palColors && palColors.length>=1 && palColors.length<=9) ? palColors.length : initK;
+
+      // อัปเดต/จดจำให้รีเฟรซแล้วไม่หาย
+      currentK  = k0;
+      selectedK = k0;
+      setKBtn(k0);
+      rememberK(k0);
+
+      resultCache.set(k0, { blob, palette: palColors });
+
+      setTimeout(()=>{ enableAll(true); setPlayLabel(true); setLoadingUI(false); }, 800);
+      renderPalette(job_id, palColors);
+      await snapshotK(job_id, k0);
+    })();
+
+    // K dropdown
+    reBtn.addEventListener('click', e=>{ e.preventDefault(); const opened=reWrap.classList.toggle('open'); reBtn.setAttribute('aria-expanded', opened ? 'true' : 'false'); });
+    document.addEventListener('click', e=>{ if (reWrap && !reWrap.contains(e.target)){ reWrap.classList.remove('open'); reBtn.setAttribute('aria-expanded','false'); }});
+    [...(reMenu.querySelectorAll('a[data-k]')||[])].forEach(a=>a.addEventListener('click', e=>{
+      e.preventDefault();
+      const raw = a.getAttribute('data-k') || a.textContent || '6';
+      selectedK = parseK(raw, getInitK());
+      setKBtn(selectedK);
+      rememberK(selectedK);            // <<< จำทันทีแม้ยังไม่กด Process
+      reWrap.classList.remove('open'); reBtn.setAttribute('aria-expanded','false');
+    }));
+
+    // Reprocess
+    $("reprocessBtn").addEventListener('click', async ()=>{
+      const targetK = selectedK ?? getInitK();
+      if (targetK === currentK) return;
+
+      // 1) ใช้ cache ในหน้า
+      const cached = resultCache.get(targetK);
+      if (cached && cached.blob){
+        const url = URL.createObjectURL(cached.blob);
+        revokeCurrentURL();
+        currentObjectURL = url;
+        $("resultSrc").src = currentObjectURL;
+        $("resultVideo").load();
+        renderPalette(job_id, cached.palette);
+        currentK = targetK;
+        rememberK(currentK);
+        return;
       }
-    }
 
-    function restartVideo() {
-      video.currentTime = 0;
-      video.play();
-      toggleBtn.innerHTML = '⏸ Pause';
-    }
+      // 2) ลองดึง cache จากเซิร์ฟเวอร์
+      const ok = await tryLoadCached(job_id, targetK);
+      if (ok){ return; }
+
+      // 3) ไม่มี cache -> ประมวลผลจริง (ซ่อนปุ่ม)
+      await reprocess(job_id, targetK, {
+        onStart: ()=> setLoadingUI(true),
+        onSwap: (st)=>{
+          const resURL = `${API_BASE}${st.result_url}?${NGROK_QS}&_=${now()}`;
+          (async ()=>{
+            const blob = await fetch(resURL, {headers:NGROK_HDR, cache:"no-store"}).then(r=>r.blob());
+            const url = URL.createObjectURL(blob);
+            revokeCurrentURL();
+            currentObjectURL = url;
+            $("resultSrc").src = currentObjectURL;
+            $("resultVideo").load();
+
+            const onOk = async ()=>{
+              let palColors=[];
+              try{
+                const pal = await fetch(`${API_BASE}/api/colors/${job_id}?_=${now()}`, {headers:NGROK_HDR, cache:"no-store"}).then(r=>r.json());
+                palColors = pal.colors || [];
+              }catch(_){}
+              resultCache.set(targetK, { blob, palette: palColors });
+              currentK = targetK;
+              rememberK(currentK);
+
+              await snapshotK(job_id, targetK);
+              enableAll(true);
+              renderPalette(job_id, palColors);
+              setLoadingUI(false);
+              $("resultVideo").removeEventListener("loadeddata", onOk);
+            };
+            $("resultVideo").addEventListener("loadeddata", onOk);
+          })();
+        }
+      });
+    });
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once:true });
+  else init();
   </script>
 </body>
 </html>

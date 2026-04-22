@@ -1,23 +1,116 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Sketch with Color Simulation</title>
-  <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css?v=20251010H" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:,">
+
+  <!-- OVERRIDES + Color dropdown button -->
+  <style>
+    :root{ --pink:#ff5e78; --y:#facc15; --blue:#ff5e78; --ink:#111; --stone-50:#fafaf9; --stone-800:#292524; }
+    .left-content h1 span{ color:var(--pink)!important; }
+
+    .filepicker{
+      display:flex; align-items:center; gap:14px; margin-bottom:10px;
+      width:520px; max-width:100%; padding:10px 12px;
+      border-radius:9999px; border:2px dashed var(--y); background:rgba(255,255,255,.03);
+    }
+    .filepicker input[type="file"]{
+      position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+      overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+    }
+    .filepicker__name{ color:#e6e6e6; opacity:.9; font-size:.95rem; }
+
+    .btn-uiverse{
+      font-size:1rem; cursor:pointer; position:relative; font-family:"Rubik","Poppins",sans-serif;
+      font-weight:700; line-height:1; padding:1px; transform:translate(-4px,-4px);
+      outline:2px solid transparent; outline-offset:5px; border-radius:9999px;
+      background-color:var(--stone-800); color:var(--stone-800);
+      transition:transform 150ms ease, box-shadow 150ms ease; text-align:center;
+      box-shadow:
+        0.5px 0.5px 0 0 var(--stone-800),
+        1px 1px 0 0 var(--stone-800),
+        1.5px 1.5px 0 0 var(--stone-800),
+        2px 2px 0 0 var(--stone-800),
+        2.5px 2.5px 0 0 var(--stone-800),
+        3px 3px 0 0 var(--stone-800),
+        0 0 0 2px var(--stone-50),
+        0.5px 0.5px 0 2px var(--stone-50),
+        1px 1px 0 2px var(--stone-50),
+        1.5px 1.5px 0 2px var(--stone-50),
+        2px 2px 0 2px var(--stone-50),
+        2.5px 2.5px 0 2px var(--stone-50),
+        3px 3px 0 2px var(--stone-50),
+        3.5px 3.5px 0 2px var(--stone-50),
+        4px 4px 0 2px var(--stone-50);
+    }
+    .btn-uiverse:hover{ transform:translate(0,0); box-shadow:0 0 0 2px var(--stone-50); }
+    .btn-uiverse:focus-visible{ outline-color: currentColor; outline-style:dashed; }
+    .btn-uiverse > div{ position:relative; pointer-events:none; border:2px solid rgba(255,255,255,.3); border-radius:9999px; }
+    .btn-uiverse > div::before{
+      content:""; position:absolute; inset:0; border-radius:9999px; opacity:.5;
+      background-image:
+        radial-gradient(rgb(255 255 255 / 80%) 20%, transparent 20%),
+        radial-gradient(rgb(255 255 255 / 100%) 20%, transparent 20%);
+      background-position:0 0, 4px 4px; background-size:8px 8px; mix-blend-mode:hard-light;
+      animation:dots .5s linear infinite;
+    }
+    .btn-uiverse > div > span{ position:relative; display:flex; align-items:center; justify-content:center; padding:.75rem 1.25rem; gap:.25rem; filter:drop-shadow(0 -1px 0 rgba(255,255,255,.25)); }
+    @keyframes dots{ 0%{background-position:0 0, 4px 4px;} 100%{background-position:8px 0, 12px 4px;} }
+    .btn-yellow{ color:var(--y); } .btn-yellow > div{ background-color:var(--y); } .btn-yellow > div > span{ color:var(--ink); }
+    .btn-blue{ color:var(--blue); display:block; width:520px; max-width:100%; margin-top:14px; }
+    .btn-blue > div{ background-color:var(--blue); } .btn-blue > div > span{ color:#fff; }
+
+    /* Color dropdown button (click-to-open) */
+    .color-button{ margin-left:auto; position:relative; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    .color-button .button{
+      background-color:#78e3e0; color:#212121; padding:10px 15px; font-size:15px; font-weight:bold;
+      border:2px solid transparent; border-radius:15px; cursor:pointer; white-space:nowrap;
+    }
+    .color-button .dropdown-content{
+      display:none; font-size:13px; position:absolute; right:0; top:calc(100% + 4px);
+      z-index:20; min-width:200px; background-color:#212121;
+      border:2px solid #78e3e0; border-radius:0 15px 15px 15px;
+      box-shadow:0 8px 16px rgba(0,0,0,.2);
+    }
+    .color-button.open .dropdown-content{ display:block; }
+    .color-button.open .button{ border-radius:15px 15px 0 0; }
+    .color-button .dropdown-content a{
+      color:#78e3e0; padding:8px 10px; text-decoration:none; display:block; transition:.1s;
+    }
+    .color-button .dropdown-content a:hover{ background-color:#78e3e0; color:#212121; }
+    .color-button .dropdown-content a:focus{ background-color:#212121; color:#78e3e0; }
+    .color-button .dropdown-content #top:hover{ border-radius:0 13px 0 0; }
+    .color-button .dropdown-content #bottom:hover{ border-radius:0 0 13px 13px; }
+
+    /* === แก้เรื่องรูปแนวตั้งล้น: กรอบพรีวิวฝั่งขวา + รูปข้างใน === */
+    .right-image{
+      width: min(48vw, 640px);   /* กว้างสูงสุด 640px หรือ 48% ของจอ */
+      height: min(48vw, 420px);  /* สูงสุด 420px หรือ 48% ของจอ */
+      display:flex; align-items:center; justify-content:center;
+      overflow:hidden; border-radius:24px;
+    }
+    .right-image img#preview{
+      max-width:100%; max-height:100%;
+      width:auto; height:auto;
+      object-fit:contain;            /* รักษาสัดส่วน ใส่ขอบขาวเมื่อเป็นแนวตั้ง */
+      display:block;
+    }
+    @media (max-width: 900px){
+      .right-image{ width:100%; height:56vw; } /* มือถือให้กินความกว้าง แล้วกำหนดความสูงตามสัดส่วน */
+    }
+  </style>
 </head>
 <body>
   <div class="page-container">
     <header>
       <div class="nav-container">
         <div class="logo">SketchColor</div>
-        <nav>
-          <ul>
-            <li><a href="#">HOME</a></li>
-            <li><a href="#">GALLERY</a></li>
-            <li><a href="#">HELP</a></li>
-          </ul>
-        </nav>
+        <nav><ul><li><a href="index.html">HOME</a></li></ul></nav>
       </div>
     </header>
 
@@ -26,32 +119,160 @@
         <h1>Sketch<br>with<br><span>Color Simulation</span></h1>
         <p>Upload your image to simulate the stroke-by-stroke drawing process!</p>
 
-        <input type="file" id="imageInput" accept="image/*">
-        <button onclick="mockUpload()">Upload Image</button>
-        <div id="status"></div>
+        <!-- แถวเดียว: Choose File + file name + (ปุ่ม Color ▾) -->
+        <div class="filepicker">
+          <input type="file" id="imageInput" accept="image/*" />
+          <button type="button" class="btn-uiverse btn-yellow" id="pickBtn" aria-label="Choose file">
+            <div><span>Choose File</span></div>
+          </button>
+          <span class="filepicker__name" id="fileName">No file chosen</span>
+
+          <!-- hidden holder for K -->
+          <input type="hidden" id="colorCount" value="9" />
+
+          <!-- ปุ่ม Color (dropdown) -->
+          <div class="color-button" id="colorWrap">
+            <button class="button" id="colorBtn" aria-haspopup="true" aria-expanded="false">Color: 8 ▾</button>
+            <div class="dropdown-content" id="colorMenu" role="menu" aria-label="Choose colors">
+              <a id="top"    href="#" data-k="1" role="menuitem">1 color</a>
+              <a             href="#" data-k="2" role="menuitem">2 colors</a>
+              <a             href="#" data-k="3" role="menuitem">3 colors</a>
+              <a             href="#" data-k="4" role="menuitem">4 colors</a>
+              <a             href="#" data-k="5" role="menuitem">5 colors</a>
+              <a             href="#" data-k="6" role="menuitem">6 colors</a>
+              <a             href="#" data-k="7" role="menuitem">7 colors</a>
+              <a             href="#" data-k="8" role="menuitem">8 colors</a>
+              <a id="bottom" href="#" data-k="9" role="menuitem">9 colors</a>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-uiverse btn-blue" onclick="mockUpload()">
+          <div><span>Upload Image</span></div>
+        </button>
+        <div id="status" style="display:none"></div>
       </div>
-      
+
       <div class="right-image">
-        <img src="parrot_no_bg.png" alt="Parrot Image" id="preview" style="display: block;">
+        <img src="parrot_no_bg.png" alt="Parrot Image" id="preview" />
       </div>
     </div>
   </div>
 
+  <!-- โหลดสคริปต์ -->
   <script>
-    function mockUpload() {
-      const file = document.getElementById("imageInput").files[0];
-      if (!file) {
-        alert("Please select an image first.");
-        return;
+    (function () {
+      const ver = 'v=20251010H';
+      function loadWithFallback(primary, fallback) {
+        return new Promise((resolve, reject) => {
+          let done = false;
+          const s = document.createElement('script');
+          s.defer = true;
+          s.src = primary + (primary.includes('?') ? '&' : '?') + ver;
+          s.onload = () => { if (!done) { done = true; resolve(primary); } };
+          s.onerror = () => {
+            if (done) return;
+            const s2 = document.createElement('script');
+            s2.defer = true;
+            s2.src = fallback + (fallback.includes('?') ? '&' : '?') + ver;
+            s2.onload = () => { if (!done) { done = true; resolve(fallback); } };
+            s2.onerror = () => {
+              if (!done) { done = true; alert('Cannot load frontend script.'); reject(); }
+            };
+            document.body.appendChild(s2);
+          };
+          document.body.appendChild(s);
+        });
+      }
+      loadWithFallback('script.js', 'scrip.js').catch(()=>{});
+    })();
+  </script>
+
+  <!-- อัปเดตชื่อไฟล์ + ขนาด + เมนู Color + พรีวิวฝั่งขวาทันที -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function(){
+      const input   = document.getElementById('imageInput');
+      const btnPick = document.getElementById('pickBtn');
+      const nameEl  = document.getElementById('fileName');
+      const preview = document.getElementById('preview');
+
+      let lastObjURL = null;
+      function previewFile(file){
+        if (lastObjURL){ try{ URL.revokeObjectURL(lastObjURL); }catch(_){ } lastObjURL = null; }
+        if (!preview) return;
+        if (!file){ preview.src = 'parrot_no_bg.png'; preview.alt = 'Parrot Image'; return; }
+        lastObjURL = URL.createObjectURL(file);
+        preview.src = lastObjURL;
+        preview.alt = file.name || 'preview';
       }
 
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        localStorage.setItem("previewURL", e.target.result);
-        window.location.href = "result.html"; // ไปหน้าที่สอง
-      };
-      reader.readAsDataURL(file);
-    }
+      async function showNameAndSize(file){
+        if(!file){
+           nameEl.textContent = 'No file chosen'; 
+           previewFile(null); 
+           return;
+           }
+        if(wrap) wrap.hidden = false;
+
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        const dims = await new Promise(res=>{
+          img.onload = ()=>res({w:img.naturalWidth||img.width, h:img.naturalHeight||img.height});
+          img.onerror= ()=>res({w:null,h:null});
+          img.src = url;
+        });
+        try{ URL.revokeObjectURL(url); }catch(_){}
+
+        nameEl.textContent = (dims.w && dims.h) ? `${file.name} size ${dims.w}×${dims.h} ` : file.name;
+
+        // พรีวิวด้านขวาทันที (จะถูกครอบด้วย .right-image ให้พอดีกรอบ)
+        previewFile(file);
+
+        sessionStorage.setItem('orig_name', file.name);
+        sessionStorage.setItem('orig_w', String(dims.w || 0));
+        sessionStorage.setItem('orig_h', String(dims.h || 0));
+      }
+
+      if (btnPick && input){
+        btnPick.addEventListener('click', () => input.click());
+        input.addEventListener('change', () => {
+          const f = input.files && input.files[0];
+          showNameAndSize(f);
+        });
+      }
+
+      const hiddenK = document.getElementById('colorCount');
+      const wrap = document.getElementById('colorWrap');
+      const btn  = document.getElementById('colorBtn');
+      const menu = document.getElementById('colorMenu');
+      const links = menu.querySelectorAll('a[data-k]');
+
+      function setK(k){ hiddenK.value = k; btn.textContent = `Number of Colors: ${k} ▾`; }
+      setK(hiddenK.value || '8');
+
+      btn.addEventListener('click', (e)=>{
+        e.preventDefault();
+        const opened = wrap.classList.toggle('open');
+        btn.setAttribute('aria-expanded', opened ? 'true' : 'false');
+      });
+
+      links.forEach(a=>{
+        a.addEventListener('click', (e)=>{
+          e.preventDefault();
+          const k = a.getAttribute('data-k') || '6';
+          setK(k);
+          wrap.classList.remove('open');
+          btn.setAttribute('aria-expanded', 'false');
+        });
+      });
+
+      document.addEventListener('click', (e)=>{
+        if (!wrap.contains(e.target) && wrap.classList.contains('open')){
+          wrap.classList.remove('open');
+          btn.setAttribute('aria-expanded', 'false');
+        }
+      });
+    });
   </script>
 </body>
 </html>
